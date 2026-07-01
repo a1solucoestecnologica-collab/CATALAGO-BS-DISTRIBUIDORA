@@ -25,6 +25,11 @@ export function SiteFooter() {
                   Ver catálogo
                 </Link>
               </li>
+              <li>
+                <Link href="/admin/sync" className="hover:underline">
+                  Sincronização Bling
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

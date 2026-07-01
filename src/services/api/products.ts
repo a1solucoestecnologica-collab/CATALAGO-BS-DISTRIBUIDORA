@@ -1,5 +1,9 @@
 import type { CatalogProduct } from "@/types/catalog";
 import {
+  getCatalogProductBySlug,
+  listActiveCatalogProducts,
+} from "@/services/sync/catalog-product-repository";
+import {
   getProductById,
   getProductVariations,
   getProductVariationsBatch,
@@ -23,7 +27,7 @@ export async function getCatalogConfigurationStatus(): Promise<
   return (await isBlingConfigured()) ? "configured" : "not_configured";
 }
 
-async function loadCatalogProducts(): Promise<CatalogProduct[]> {
+async function loadCatalogProductsFromBling(): Promise<CatalogProduct[]> {
   const rows = await listAllActiveProducts();
   const catalogRows = rows.filter((r) => !isVariationChild(r));
   const ids = catalogRows.map((r) => String(r.id));
@@ -60,6 +64,19 @@ async function loadCatalogProducts(): Promise<CatalogProduct[]> {
   return products;
 }
 
+async function loadCatalogProducts(): Promise<CatalogProduct[]> {
+  try {
+    const cached = await listActiveCatalogProducts();
+    if (cached.length > 0) return cached;
+  } catch (e) {
+    console.warn(
+      "[products] cache indisponível, usando Bling:",
+      e instanceof Error ? e.message : e,
+    );
+  }
+  return loadCatalogProductsFromBling();
+}
+
 export async function getProducts(): Promise<CatalogLoadResult> {
   if (!(await isBlingConfigured())) {
     return { ok: false, reason: "not_configured" };
@@ -78,6 +95,13 @@ export async function getProductBySlug(
   slug: string,
 ): Promise<CatalogProduct | null> {
   if (!(await isBlingConfigured())) return null;
+
+  try {
+    const cached = await getCatalogProductBySlug(slug);
+    if (cached) return cached;
+  } catch {
+    // fallback Bling
+  }
 
   const detail = await getProductById(slug);
   if (!detail) return null;

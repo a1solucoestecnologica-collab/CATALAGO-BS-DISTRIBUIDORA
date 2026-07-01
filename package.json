@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "migrate:json-to-supabase": "tsx scripts/migrate-json-to-supabase.ts"
+    "migrate:json-to-supabase": "tsx scripts/migrate-json-to-supabase.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",
@@ -26,6 +28,7 @@
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "tsx": "^4.19.4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }
