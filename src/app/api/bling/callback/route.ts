@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { exchangeBlingAuthorizationCode } from "@/services/api/bling-oauth";
+import {
+  exchangeBlingAuthorizationCode,
+  getBlingRedirectUri,
+} from "@/services/api/bling-oauth";
 
 const STATE_COOKIE = "bling_oauth_state";
 
@@ -82,6 +85,11 @@ export async function GET(request: Request) {
   }
 
   try {
+    const redirectUri = getBlingRedirectUri();
+    const clientId = process.env.BLING_CLIENT_ID?.trim() ?? "(não definido)";
+    console.log("[bling/oauth/callback] redirect_uri:", redirectUri);
+    console.log("[bling/oauth/callback] client_id:", clientId);
+
     await exchangeBlingAuthorizationCode(code);
     const res = new NextResponse(successHtml(), {
       status: 200,
@@ -90,6 +98,10 @@ export async function GET(request: Request) {
     res.cookies.delete(STATE_COOKIE);
     return res;
   } catch (e) {
+    console.error("[bling/oauth/callback] exception:", e);
+    if (e instanceof Error && e.stack) {
+      console.error("[bling/oauth/callback] stack:", e.stack);
+    }
     const message = e instanceof Error ? e.message : "Erro ao trocar o code.";
     return new NextResponse(errorHtml(message), {
       status: 500,

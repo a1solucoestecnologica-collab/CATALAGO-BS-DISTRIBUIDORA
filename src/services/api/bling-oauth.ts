@@ -53,7 +53,11 @@ export function buildBlingAuthorizeUrl(state: string): string {
 async function requestTokens(
   body: Record<string, string>,
 ): Promise<BlingTokenResponse> {
-  const res = await fetch(`${OAUTH_BASE}/token`, {
+  const tokenUrl = `${OAUTH_BASE}/token`;
+  console.log("[bling/oauth/token] request_url:", tokenUrl);
+  console.log("[bling/oauth/token] grant_type:", body.grant_type ?? "(ausente)");
+
+  const res = await fetch(tokenUrl, {
     method: "POST",
     headers: {
       Authorization: getBasicAuth(),
@@ -64,6 +68,9 @@ async function requestTokens(
   });
 
   const text = await res.text();
+  console.log("[bling/oauth/token] http_status:", res.status);
+  console.log("[bling/oauth/token] response_body:", text);
+
   if (!res.ok) {
     throw new Error(
       `Bling OAuth token: HTTP ${res.status}${text ? ` — ${text.slice(0, 300)}` : ""}`,
