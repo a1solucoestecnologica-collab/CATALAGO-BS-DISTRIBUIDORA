@@ -3,6 +3,7 @@ import {
   saveBlingTokens,
   type BlingStoredTokens,
 } from "@/services/api/bling-token-store";
+import { getBlingCallbackUrl } from "@/lib/app-url";
 
 const OAUTH_BASE = "https://www.bling.com.br/Api/v3/oauth";
 
@@ -32,14 +33,7 @@ function getBasicAuth(): string {
 }
 
 export function getBlingRedirectUri(): string {
-  const explicit = process.env.BLING_REDIRECT_URI?.trim();
-  if (explicit) return explicit;
-  const base =
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
-  return `${base.replace(/\/$/, "")}/api/bling/callback`;
+  return getBlingCallbackUrl();
 }
 
 export function buildBlingAuthorizeUrl(state: string): string {
