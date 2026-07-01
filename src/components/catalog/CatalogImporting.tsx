@@ -30,6 +30,11 @@ export function CatalogImporting() {
 
       if (json.status === "error") {
         setError(json.message ?? "Erro na importação inicial.");
+        running.current = false;
+        setTimeout(() => {
+          setError(null);
+          void runStep();
+        }, 5000);
         return;
       }
 

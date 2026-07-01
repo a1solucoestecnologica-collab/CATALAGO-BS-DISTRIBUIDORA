@@ -4,7 +4,6 @@ import {
   exchangeBlingAuthorizationCode,
   getBlingRedirectUri,
 } from "@/services/api/bling-oauth";
-import { runInitialImportIfNeeded } from "@/services/catalog/bling-initial-import";
 
 const STATE_COOKIE = "bling_oauth_state";
 
@@ -92,16 +91,6 @@ export async function GET(request: Request) {
     console.log("[bling/oauth/callback] client_id:", clientId);
 
     await exchangeBlingAuthorizationCode(code);
-
-    // DIAGNÓSTICO TEMPORÁRIO: await direto em vez de after() — reverter após teste Vercel
-    console.log(
-      "[initial-import] diagnóstico OAuth: chamando runInitialImportIfNeeded com await",
-    );
-    try {
-      await runInitialImportIfNeeded();
-    } catch (e) {
-      console.error("[initial-import] diagnóstico OAuth: importação falhou:", e);
-    }
 
     const res = new NextResponse(successHtml(), {
       status: 200,
