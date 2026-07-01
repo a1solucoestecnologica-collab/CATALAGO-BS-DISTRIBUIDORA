@@ -10,6 +10,12 @@ import {
   isBlingTokenExpired,
 } from "@/services/api/bling-token-store";
 import { refreshBlingAccessToken } from "@/services/api/bling-oauth";
+import {
+  isInitialImportLogging,
+  logInitialImport,
+  logInitialImportApiError,
+  logInitialImportError,
+} from "@/services/catalog/initial-import-log";
 
 const DEFAULT_BASE = "https://api.bling.com.br/Api/v3";
 const FETCH_TIMEOUT_MS = 25_000;
@@ -91,16 +97,35 @@ async function blingFetch<T>(
   }
 
   let lastError: Error | null = null;
+  const urlStr = url.toString();
+  const importLog = isInitialImportLogging();
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      const res = await fetchWithTimeout(url.toString(), {
+      if (importLog && path === "/produtos") {
+        logInitialImport("3. primeira chamada GET /produtos", {
+          url: urlStr,
+          attempt: attempt + 1,
+          searchParams,
+        });
+      }
+
+      const res = await fetchWithTimeout(urlStr, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
         cache: "no-store",
       });
+
+      if (importLog && path === "/produtos") {
+        logInitialImport("4. status HTTP", {
+          url: urlStr,
+          status: res.status,
+          statusText: res.statusText,
+          attempt: attempt + 1,
+        });
+      }
 
       if (res.status === 429) {
         const wait = INITIAL_BACKOFF_MS * 2 ** attempt;
@@ -109,6 +134,14 @@ async function blingFetch<T>(
       }
 
       if (res.status >= 500) {
+        const body500 = await res.text().catch(() => "");
+        if (importLog) {
+          logInitialImportApiError({
+            url: urlStr,
+            status: res.status,
+            body: body500,
+          });
+        }
         const wait = INITIAL_BACKOFF_MS * 2 ** attempt;
         await sleep(wait);
         lastError = new BlingApiError(
@@ -120,6 +153,13 @@ async function blingFetch<T>(
 
       if (!res.ok) {
         const body = await res.text().catch(() => "");
+        if (importLog) {
+          logInitialImportApiError({
+            url: urlStr,
+            status: res.status,
+            body,
+          });
+        }
         throw new BlingApiError(
           `Bling ${path}: HTTP ${res.status}${body ? ` — ${body.slice(0, 200)}` : ""}`,
           res.status,
@@ -129,6 +169,13 @@ async function blingFetch<T>(
       return (await res.json()) as T;
     } catch (e) {
       if (e instanceof BlingApiError) throw e;
+      if (importLog) {
+        logInitialImportError(`blingFetch ${path} tentativa ${attempt + 1}`, e);
+        logInitialImport("fetch falhou", {
+          url: urlStr,
+          attempt: attempt + 1,
+        });
+      }
       lastError =
         e instanceof Error
           ? e
@@ -137,6 +184,10 @@ async function blingFetch<T>(
         await sleep(INITIAL_BACKOFF_MS * 2 ** attempt);
       }
     }
+  }
+
+  if (importLog) {
+    logInitialImportError(`blingFetch ${path} esgotou tentativas`, lastError);
   }
 
   throw lastError ?? new Error("Falha de comunicação com o Bling.");

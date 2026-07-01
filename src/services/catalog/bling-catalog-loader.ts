@@ -9,6 +9,11 @@ import {
   isVariationChild,
   mapBlingProductToCatalog,
 } from "@/services/api/bling-mapper";
+import {
+  isInitialImportLogging,
+  logInitialImport,
+  logInitialImportError,
+} from "@/services/catalog/initial-import-log";
 
 async function mapBlingRowsToCatalogProducts(
   rows: BlingProductSummary[],
@@ -17,10 +22,25 @@ async function mapBlingRowsToCatalogProducts(
   if (catalogRows.length === 0) return [];
 
   const ids = catalogRows.map((r) => String(r.id));
-  const [stockMap, variationsMap] = await Promise.all([
-    getStockBalances(ids),
-    getProductVariationsBatch(ids, 10),
-  ]);
+
+  if (isInitialImportLogging()) {
+    logInitialImport("mapeamento: buscando estoque e variações", {
+      parentCount: catalogRows.length,
+    });
+  }
+
+  let stockMap: Map<string, number>;
+  let variationsMap: Map<string, import("@/services/api/bling.types").BlingProductVariation[]>;
+
+  try {
+    [stockMap, variationsMap] = await Promise.all([
+      getStockBalances(ids),
+      getProductVariationsBatch(ids, 10),
+    ]);
+  } catch (e) {
+    logInitialImportError("getStockBalances/getProductVariationsBatch", e);
+    throw e;
+  }
 
   const allVariationIds: string[] = [];
   for (const vars of variationsMap.values()) {
@@ -53,7 +73,32 @@ async function mapBlingRowsToCatalogProducts(
 export async function fetchCatalogProductsPageFromBling(
   page: number,
 ): Promise<{ rawCount: number; products: CatalogProduct[] }> {
-  const rows = await listActiveProductsPage(page);
-  const products = await mapBlingRowsToCatalogProducts(rows);
+  if (isInitialImportLogging()) {
+    logInitialImport("3. primeira chamada GET /produtos", { page });
+  }
+
+  let rows: BlingProductSummary[];
+  try {
+    rows = await listActiveProductsPage(page);
+  } catch (e) {
+    logInitialImportError("listActiveProductsPage", e);
+    throw e;
+  }
+
+  if (isInitialImportLogging()) {
+    logInitialImport("produtos brutos recebidos da API", {
+      page,
+      rawCount: rows.length,
+    });
+  }
+
+  let products: CatalogProduct[];
+  try {
+    products = await mapBlingRowsToCatalogProducts(rows);
+  } catch (e) {
+    logInitialImportError("mapBlingRowsToCatalogProducts", e);
+    throw e;
+  }
+
   return { rawCount: rows.length, products };
 }
