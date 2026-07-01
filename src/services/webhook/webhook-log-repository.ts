@@ -37,6 +37,73 @@ export async function createWebhookLog(input: {
   return id;
 }
 
+async function findInitialImportSuccessLogId(
+  integrationId = BLING_INTEGRATION_ID,
+): Promise<string | null> {
+  const { data, error } = await getSupabaseAdmin()
+    .from("webhook_logs")
+    .select("id")
+    .eq("integration_id", integrationId)
+    .eq("evento", INITIAL_IMPORT_EVENT)
+    .eq("status", "success")
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data?.id ?? null;
+}
+
+/**
+ * Marca a importação inicial como concluída.
+ * Respeita idx_webhook_logs_initial_import_success_once: atualiza o success
+ * existente (ex.: v1) em vez de inserir outro registro.
+ */
+export async function completeInitialImport(
+  payload: Record<string, unknown>,
+  integrationId = BLING_INTEGRATION_ID,
+): Promise<void> {
+  const existingId = await findInitialImportSuccessLogId(integrationId);
+
+  if (existingId) {
+    const { error } = await getSupabaseAdmin()
+      .from("webhook_logs")
+      .update({
+        payload,
+        erro: null,
+        recebido_em: new Date().toISOString(),
+      })
+      .eq("id", existingId);
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  try {
+    await createWebhookLog({
+      evento: INITIAL_IMPORT_EVENT,
+      payload,
+      status: "success",
+      integrationId,
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    if (!message.includes("idx_webhook_logs_initial_import_success_once")) {
+      throw e;
+    }
+
+    const racedId = await findInitialImportSuccessLogId(integrationId);
+    if (!racedId) throw e;
+
+    const { error } = await getSupabaseAdmin()
+      .from("webhook_logs")
+      .update({
+        payload,
+        erro: null,
+        recebido_em: new Date().toISOString(),
+      })
+      .eq("id", racedId);
+    if (error) throw new Error(error.message);
+  }
+}
+
 export async function hasInitialImportCompleted(
   integrationId = BLING_INTEGRATION_ID,
 ): Promise<boolean> {

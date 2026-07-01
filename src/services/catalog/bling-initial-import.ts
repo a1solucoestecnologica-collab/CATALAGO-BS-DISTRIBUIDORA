@@ -8,6 +8,7 @@ import {
   upsertCatalogProduct,
 } from "@/services/sync/catalog-product-repository";
 import {
+  completeInitialImport,
   createWebhookLog,
   getInitialImportProgress,
   hasInitialImportCompleted,
@@ -95,11 +96,9 @@ export async function runInitialImportStep(): Promise<InitialImportStepResult> {
           durationMs: Date.now() - startedAt,
         };
 
-        await createWebhookLog({
-          evento: INITIAL_IMPORT_EVENT,
-          payload: stats,
-          status: "success",
-        });
+        await completeInitialImport(
+          stats as unknown as Record<string, unknown>,
+        );
 
         console.log("[bling/initial-import] concluída", stats);
         return { status: "complete", stats };
