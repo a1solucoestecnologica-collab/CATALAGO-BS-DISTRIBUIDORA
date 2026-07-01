@@ -1,4 +1,4 @@
-import { NextResponse, after } from "next/server";
+import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import {
   exchangeBlingAuthorizationCode,
@@ -93,13 +93,15 @@ export async function GET(request: Request) {
 
     await exchangeBlingAuthorizationCode(code);
 
-    after(async () => {
-      try {
-        await runInitialImportIfNeeded();
-      } catch (e) {
-        console.error("[bling/oauth/callback] initial import failed:", e);
-      }
-    });
+    // DIAGNÓSTICO TEMPORÁRIO: await direto em vez de after() — reverter após teste Vercel
+    console.log(
+      "[initial-import] diagnóstico OAuth: chamando runInitialImportIfNeeded com await",
+    );
+    try {
+      await runInitialImportIfNeeded();
+    } catch (e) {
+      console.error("[initial-import] diagnóstico OAuth: importação falhou:", e);
+    }
 
     const res = new NextResponse(successHtml(), {
       status: 200,
