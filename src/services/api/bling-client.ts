@@ -143,6 +143,45 @@ async function blingFetch<T>(
 }
 
 /** Uma página de produtos ativos (até 100 itens). */
+export type BlingProductCategoryRow = {
+  id?: number | string;
+  descricao?: string;
+  nome?: string;
+  categoriaPai?: { id?: number | string };
+};
+
+/** Lista categorias de produtos com paginação. */
+export async function listProductCategoriesPage(
+  page: number,
+  limit = 100,
+): Promise<BlingProductCategoryRow[]> {
+  const json = await blingFetch<BlingListResponse<BlingProductCategoryRow>>(
+    "/categorias/produtos",
+    {
+      pagina: String(page),
+      limite: String(limit),
+    },
+  );
+  return json.data ?? [];
+}
+
+/** Lista todas as categorias de produtos do Bling. */
+export async function listAllProductCategories(): Promise<
+  BlingProductCategoryRow[]
+> {
+  const all: BlingProductCategoryRow[] = [];
+  let page = 1;
+  const limit = 100;
+  for (;;) {
+    const batch = await listProductCategoriesPage(page, limit);
+    if (batch.length === 0) break;
+    all.push(...batch);
+    if (batch.length < limit) break;
+    page += 1;
+  }
+  return all;
+}
+
 export async function listActiveProductsPage(
   page: number,
   limit = 100,

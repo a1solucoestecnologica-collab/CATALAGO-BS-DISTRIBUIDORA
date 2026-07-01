@@ -1,12 +1,5 @@
-import {
-  getProductById,
-  getProductVariations,
-  getStockBalances,
-} from "@/services/api/bling-client";
-import {
-  isVariationChild,
-  mapBlingProductToCatalog,
-} from "@/services/api/bling-mapper";
+import { fetchAllBlingCategoryMap } from "@/services/catalog/bling-category-map";
+import { enrichParentProductFromBling } from "@/services/catalog/bling-product-enricher";
 import {
   inactivateCatalogProduct,
   upsertCatalogProduct,
@@ -52,39 +45,8 @@ export function extractWebhookProductId(
 export async function syncProductFromBling(
   blingProductId: string,
 ): Promise<ProductSyncOutcome> {
-  const detail = await getProductById(blingProductId);
-
-  if (!detail) {
-    await inactivateCatalogProduct(blingProductId);
-    return "inactivated";
-  }
-
-  if (isVariationChild(detail)) {
-    const parentId = detail.variacao?.produtoPai?.id;
-    if (parentId != null) {
-      return syncProductFromBling(String(parentId));
-    }
-    return "ignored";
-  }
-
-  if (detail.situacao && detail.situacao !== "A") {
-    await inactivateCatalogProduct(blingProductId);
-    return "inactivated";
-  }
-
-  const variations = await getProductVariations(blingProductId);
-  const stockIds = [
-    blingProductId,
-    ...variations.map((v) => String(v.id ?? "")).filter(Boolean),
-  ];
-  const stockMap = await getStockBalances(stockIds);
-
-  const mapped = mapBlingProductToCatalog(
-    detail,
-    variations,
-    stockMap.get(blingProductId),
-    stockMap,
-  );
+  const categoryMap = await fetchAllBlingCategoryMap();
+  const mapped = await enrichParentProductFromBling(blingProductId, categoryMap);
 
   if (!mapped) {
     await inactivateCatalogProduct(blingProductId);

@@ -10,6 +10,7 @@ import type {
 import {
   INITIAL_IMPORT_EVENT,
   INITIAL_IMPORT_PROGRESS_EVENT,
+  CURRENT_IMPORT_VERSION,
 } from "@/services/webhook/types";
 import { countActiveProducts } from "@/services/sync/catalog-product-repository";
 import { isBlingConfigured } from "@/services/api/bling-client";
@@ -39,15 +40,22 @@ export async function createWebhookLog(input: {
 export async function hasInitialImportCompleted(
   integrationId = BLING_INTEGRATION_ID,
 ): Promise<boolean> {
-  const { count, error } = await getSupabaseAdmin()
+  const { data, error } = await getSupabaseAdmin()
     .from("webhook_logs")
-    .select("id", { count: "exact", head: true })
+    .select("payload")
     .eq("integration_id", integrationId)
     .eq("evento", INITIAL_IMPORT_EVENT)
-    .eq("status", "success");
+    .eq("status", "success")
+    .order("recebido_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   if (error) throw new Error(error.message);
-  return (count ?? 0) > 0;
+  if (!data?.payload || typeof data.payload !== "object") return false;
+
+  const version =
+    (data.payload as { importVersion?: number }).importVersion ?? 1;
+  return version >= CURRENT_IMPORT_VERSION;
 }
 
 export async function getInitialImportProgress(

@@ -2,11 +2,18 @@ export type WebhookLogStatus = "success" | "error" | "ignored";
 
 export const INITIAL_IMPORT_EVENT = "initial_import";
 
-/** Progresso incremental da importação inicial (uma página por invocação). */
+/** Versão da importação inicial — incrementar ao mudar o formato dos dados. */
+export const CURRENT_IMPORT_VERSION = 2;
+
+/** Progresso incremental da importação inicial (lotes por invocação). */
 export const INITIAL_IMPORT_PROGRESS_EVENT = "initial_import_progress";
 
 export type InitialImportProgressPayload = {
+  importVersion: number;
   nextPage: number;
+  batchOffset: number;
+  pageParentIds?: string[];
+  categoryMap?: Record<string, string>;
   pagesCompleted: number;
   productsCreated: number;
   productsUpdated: number;

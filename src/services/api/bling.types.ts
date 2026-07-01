@@ -57,6 +57,13 @@ export type BlingProductVariation = {
   atributos?: BlingVariationAttribute[];
 };
 
+export type BlingProductCategory = {
+  id?: number | string;
+  descricao?: string;
+  nome?: string;
+  categoriaPai?: BlingRef;
+};
+
 export type BlingProductSummary = {
   id: number | string;
   nome?: string;
@@ -75,9 +82,11 @@ export type BlingProductSummary = {
   gtin?: string;
   gtinEmbalagem?: string;
   marca?: string | (BlingRef & { descricao?: string; nome?: string });
-  categoria?: BlingRef & { descricao?: string; nome?: string };
+  categoria?: BlingProductCategory;
   estoque?: BlingProductStock;
   midia?: BlingProductMedia;
+  /** URL da imagem principal na listagem GET /produtos. */
+  imagemURL?: string;
   variacao?: {
     nome?: string;
     ordem?: number;

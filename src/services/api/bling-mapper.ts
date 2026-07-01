@@ -27,14 +27,22 @@ function isValidImageUrl(url: string | undefined): url is string {
   }
 }
 
-function extractImages(
+export function extractImages(
   row: BlingProductSummary | BlingProductVariation,
 ): string[] {
-  const imgs =
+  const fromMedia =
     row.midia?.imagens?.internas ?? row.midia?.imagens?.imagensURL ?? [];
-  return imgs
+  const urls = fromMedia
     .map((im) => im.link)
     .filter((x): x is string => isValidImageUrl(x));
+
+  if (urls.length > 0) return urls;
+
+  const imagemURL =
+    "imagemURL" in row ? (row as BlingProductSummary).imagemURL : undefined;
+  if (isValidImageUrl(imagemURL)) return [imagemURL];
+
+  return [];
 }
 
 function resolveStock(
@@ -61,13 +69,20 @@ function resolveBrand(row: BlingProductSummary): {
   };
 }
 
-function resolveCategory(row: BlingProductSummary): CatalogCategory {
+export function resolveCategory(
+  row: BlingProductSummary,
+  categoryMap?: Map<string, string>,
+): CatalogCategory {
   const cat = row.categoria;
-  const id = cat?.id != null ? String(cat.id) : "sem-categoria";
+  if (cat?.id == null) {
+    return { bling_category_id: "sem-categoria", name: "Sem categoria" };
+  }
+  const id = String(cat.id);
   const name =
-    cat?.descricao?.trim() ||
-    cat?.nome?.trim() ||
-    (id === "sem-categoria" ? "Sem categoria" : `Categoria ${id}`);
+    cat.descricao?.trim() ||
+    cat.nome?.trim() ||
+    categoryMap?.get(id) ||
+    `Categoria ${id}`;
   return { bling_category_id: id, name };
 }
 
@@ -243,6 +258,7 @@ export function mapBlingProductToCatalog(
   variations: BlingProductVariation[] = [],
   stockOverride?: number,
   variationStockMap?: Map<string, number>,
+  categoryMap?: Map<string, string>,
 ): CatalogProduct | null {
   const name = row.nome?.trim();
   if (!name) return null;
@@ -272,7 +288,7 @@ export function mapBlingProductToCatalog(
     price,
     compareAtPrice:
       compareAt && compareAt > price ? compareAt : undefined,
-    category: resolveCategory(row),
+    category: resolveCategory(row, categoryMap),
     brand: brand.name,
     brandId: brand.id,
     imageUrl: imgs[0] ?? PLACEHOLDER_IMAGE,

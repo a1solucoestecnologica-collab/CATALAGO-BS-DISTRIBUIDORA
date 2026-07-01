@@ -24,10 +24,12 @@ export async function getProducts(): Promise<CatalogLoadResult> {
   }
 
   try {
-    const products = await listActiveCatalogProducts();
-    if (products.length === 0 && !(await hasInitialImportCompleted())) {
+    const importDone = await hasInitialImportCompleted();
+    if (!importDone) {
       return { ok: false, reason: "importing" };
     }
+
+    const products = await listActiveCatalogProducts();
     return { ok: true, products };
   } catch (e) {
     const message =

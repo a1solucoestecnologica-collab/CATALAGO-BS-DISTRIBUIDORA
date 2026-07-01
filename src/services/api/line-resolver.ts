@@ -6,6 +6,7 @@ import {
   getStockBalances,
 } from "@/services/api/bling-client";
 import { mapBlingProductToCatalog } from "@/services/api/bling-mapper";
+import { fetchAllBlingCategoryMap } from "@/services/catalog/bling-category-map";
 
 export type LineResolveResult =
   | { ok: true; item: SolicitacaoItem }
@@ -22,11 +23,13 @@ async function loadProductContext(blingProductId: string) {
     ...variations.map((v) => String(v.id ?? "")).filter(Boolean),
   ];
   const stockMap = await getStockBalances(stockIds);
+  const categoryMap = await fetchAllBlingCategoryMap();
   const product = mapBlingProductToCatalog(
     row,
     variations,
     stockMap.get(blingProductId),
     stockMap,
+    categoryMap,
   );
   return product;
 }
