@@ -1,10 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "alias": ["catalogo-bs-distribuidora.vercel.app"],
-  "crons": [
-    {
-      "path": "/api/cron/bling-sync",
-      "schedule": "*/15 * * * *"
-    }
-  ]
+  "alias": ["catalogo-bs-distribuidora.vercel.app"]
 }

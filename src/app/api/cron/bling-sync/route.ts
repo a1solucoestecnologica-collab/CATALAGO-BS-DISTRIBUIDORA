@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { runBlingCatalogSync } from "@/services/sync/bling-sync-runner";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET?.trim();
   const auth = request.headers.get("authorization");
