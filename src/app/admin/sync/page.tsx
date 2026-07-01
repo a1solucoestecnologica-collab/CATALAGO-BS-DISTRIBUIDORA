@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BlingSyncPanel } from "@/components/admin/BlingSyncPanel";
+import { BlingWebhookPanel } from "@/components/admin/BlingWebhookPanel";
 
 export default function AdminSyncPage() {
   return (
@@ -11,9 +11,10 @@ export default function AdminSyncPage() {
       </nav>
       <h1 className="mb-2 text-2xl font-black text-slate-900">Painel</h1>
       <p className="mb-6 text-sm text-slate-600">
-        Sincronização automática a cada 15 minutos com o Bling.
+        Integração com o Bling via webhooks — produtos atualizados em tempo
+        real.
       </p>
-      <BlingSyncPanel />
+      <BlingWebhookPanel />
     </div>
   );
 }

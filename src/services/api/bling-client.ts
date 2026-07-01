@@ -148,11 +148,6 @@ export async function listAllActiveProducts(): Promise<BlingProductSummary[]> {
   return listProductsPaginated();
 }
 
-function formatBlingDateTime(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-}
-
 async function listProductsPaginated(
   extraParams?: Record<string, string>,
 ): Promise<BlingProductSummary[]> {
@@ -177,34 +172,6 @@ async function listProductsPaginated(
     page += 1;
   }
   return all;
-}
-
-/**
- * Tenta buscar produtos alterados desde `since` via dataAlteracaoInicial.
- * Retorna null se a API não suportar (fallback para sync completa).
- */
-export async function listProductsChangedSince(
-  since: Date,
-): Promise<BlingProductSummary[] | null> {
-  try {
-    const rows = await listProductsPaginated({
-      dataAlteracaoInicial: formatBlingDateTime(since),
-    });
-    return rows;
-  } catch (e) {
-    if (e instanceof BlingApiError && (e.status === 400 || e.status === 422)) {
-      return null;
-    }
-    throw e;
-  }
-}
-
-/** IDs de todos os produtos pai ativos no Bling. */
-export async function listAllActiveParentProductIds(): Promise<string[]> {
-  const rows = await listAllActiveProducts();
-  return rows
-    .filter((r) => !r.variacao?.produtoPai?.id)
-    .map((r) => String(r.id));
 }
 
 export async function getProductById(

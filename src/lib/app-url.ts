@@ -44,3 +44,7 @@ export function getCanonicalAppOrigin(): string {
 export function getBlingCallbackUrl(): string {
   return `${getCanonicalAppOrigin()}/api/bling/callback`;
 }
+
+export function getBlingWebhookUrl(): string {
+  return `${getCanonicalAppOrigin()}/api/bling/webhook`;
+}

@@ -27,7 +27,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link href="/admin/sync" className="hover:underline">
-                  Sincronização Bling
+                  Webhooks Bling
                 </Link>
               </li>
             </ul>

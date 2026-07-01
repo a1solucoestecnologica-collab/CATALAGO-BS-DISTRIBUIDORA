@@ -43,16 +43,11 @@ describe("product-hash", () => {
 
 describe("BLING_INTEGRATION_ID", () => {
   it("usa UUID fixo para integração singleton", async () => {
-    const { BLING_INTEGRATION_ID } = await import("@/services/sync/types");
+    const { BLING_INTEGRATION_ID } = await import(
+      "@/services/sync/integration"
+    );
     expect(BLING_INTEGRATION_ID).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
     );
-  });
-});
-
-describe("SYNC_INTERVAL_MS", () => {
-  it("é 15 minutos", async () => {
-    const { SYNC_INTERVAL_MS } = await import("@/services/sync/types");
-    expect(SYNC_INTERVAL_MS).toBe(15 * 60 * 1000);
   });
 });
