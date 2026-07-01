@@ -2,7 +2,7 @@
  * Importa data/store/clientes.json e data/store/solicitacoes.json para o Supabase.
  *
  * Uso (variáveis de ambiente obrigatórias):
- *   NEXT_PUBLIC_SUPABASE_URL
+ *   NEXT_PUBLIC_SUPABASE_URL (ou SUPABASE_URL)
  *   SUPABASE_SERVICE_ROLE_KEY
  *
  * Exemplo local:
@@ -40,14 +40,21 @@ async function readJsonArray<T>(file: string): Promise<T[]> {
 }
 
 function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const url =
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+    process.env.SUPABASE_URL?.trim();
+  const normalizedUrl = url
+    ? url.startsWith("http")
+      ? url
+      : `https://${url}`
+    : undefined;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!url || !key) {
+  if (!normalizedUrl || !key) {
     throw new Error(
-      "Defina NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.",
+      "Defina NEXT_PUBLIC_SUPABASE_URL (ou SUPABASE_URL) e SUPABASE_SERVICE_ROLE_KEY.",
     );
   }
-  return createClient(url, key, {
+  return createClient(normalizedUrl, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }

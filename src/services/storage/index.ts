@@ -10,7 +10,7 @@ export function getStorage(): CatalogStorage {
   if (!instance) {
     if (!isSupabaseConfigured()) {
       throw new Error(
-        "Supabase não configurado: defina NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.",
+        "Supabase não configurado: defina NEXT_PUBLIC_SUPABASE_URL (ou SUPABASE_URL) e SUPABASE_SERVICE_ROLE_KEY.",
       );
     }
     instance = new SupabaseCatalogStorage();
