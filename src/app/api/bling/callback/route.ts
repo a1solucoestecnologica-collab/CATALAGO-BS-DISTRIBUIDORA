@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { cookies } from "next/headers";
 import {
   exchangeBlingAuthorizationCode,
   getBlingRedirectUri,
 } from "@/services/api/bling-oauth";
+import { runInitialImportIfNeeded } from "@/services/catalog/bling-initial-import";
 
 const STATE_COOKIE = "bling_oauth_state";
 
@@ -25,7 +26,7 @@ function successHtml(): string {
 <body>
   <div class="card">
     <h1>Bling conectado com sucesso</h1>
-    <p>Os tokens foram salvos. O catálogo já pode consultar a API do Bling.</p>
+    <p>Os tokens foram salvos. A importação inicial do catálogo será feita em segundo plano, se necessário.</p>
     <a href="/">Voltar ao catálogo</a>
   </div>
 </body>
@@ -91,6 +92,15 @@ export async function GET(request: Request) {
     console.log("[bling/oauth/callback] client_id:", clientId);
 
     await exchangeBlingAuthorizationCode(code);
+
+    after(async () => {
+      try {
+        await runInitialImportIfNeeded();
+      } catch (e) {
+        console.error("[bling/oauth/callback] initial import failed:", e);
+      }
+    });
+
     const res = new NextResponse(successHtml(), {
       status: 200,
       headers: { "Content-Type": "text/html; charset=utf-8" },

@@ -1,12 +1,19 @@
 import { getProducts } from "@/services/api/products";
 import { CatalogPage } from "@/components/catalog/CatalogPage";
 import { CatalogNotConfigured } from "@/components/catalog/CatalogNotConfigured";
+import { CatalogImporting } from "@/components/catalog/CatalogImporting";
+
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const result = await getProducts();
 
   if (!result.ok && result.reason === "not_configured") {
     return <CatalogNotConfigured />;
+  }
+
+  if (!result.ok && result.reason === "importing") {
+    return <CatalogImporting />;
   }
 
   if (!result.ok) {

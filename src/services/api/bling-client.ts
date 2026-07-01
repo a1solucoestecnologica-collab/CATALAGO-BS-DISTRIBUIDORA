@@ -12,7 +12,6 @@ import {
 import { refreshBlingAccessToken } from "@/services/api/bling-oauth";
 
 const DEFAULT_BASE = "https://api.bling.com.br/Api/v3";
-const REVALIDATE_SECONDS = 300;
 const FETCH_TIMEOUT_MS = 25_000;
 const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 800;
@@ -100,7 +99,7 @@ async function blingFetch<T>(
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
-        next: { revalidate: REVALIDATE_SECONDS },
+        cache: "no-store",
       });
 
       if (res.status === 429) {
@@ -141,6 +140,23 @@ async function blingFetch<T>(
   }
 
   throw lastError ?? new Error("Falha de comunicação com o Bling.");
+}
+
+/** Uma página de produtos ativos (até 100 itens). */
+export async function listActiveProductsPage(
+  page: number,
+  limit = 100,
+): Promise<BlingProductSummary[]> {
+  const json = await blingFetch<BlingListResponse<BlingProductSummary>>(
+    "/produtos",
+    {
+      pagina: String(page),
+      limite: String(limit),
+      criterio: "1",
+      tipo: "P",
+    },
+  );
+  return json.data ?? [];
 }
 
 /** Lista produtos ativos com paginação completa. */

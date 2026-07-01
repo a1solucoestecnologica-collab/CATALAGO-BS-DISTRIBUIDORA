@@ -115,3 +115,15 @@ export async function countActiveProducts(
   if (error) throw new Error(error.message);
   return count ?? 0;
 }
+
+export async function countAllCatalogProducts(
+  integrationId = BLING_INTEGRATION_ID,
+): Promise<number> {
+  const { count, error } = await getSupabaseAdmin()
+    .from("catalog_products")
+    .select("id", { count: "exact", head: true })
+    .eq("integration_id", integrationId);
+
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}

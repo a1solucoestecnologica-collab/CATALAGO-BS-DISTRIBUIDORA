@@ -1,5 +1,20 @@
 export type WebhookLogStatus = "success" | "error" | "ignored";
 
+export const INITIAL_IMPORT_EVENT = "initial_import";
+
+/** Progresso incremental da importação inicial (uma página por invocação). */
+export const INITIAL_IMPORT_PROGRESS_EVENT = "initial_import_progress";
+
+export type InitialImportProgressPayload = {
+  nextPage: number;
+  pagesCompleted: number;
+  productsCreated: number;
+  productsUpdated: number;
+  productsUnchanged: number;
+  productsMapped: number;
+  startedAt: number;
+};
+
 export type WebhookLogRecord = {
   id: string;
   integration_id: string;
