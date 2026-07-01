@@ -5,6 +5,11 @@ import type {
   BlingSingleResponse,
   BlingStockBalance,
 } from "@/services/api/bling.types";
+import {
+  getBlingStoredTokens,
+  isBlingTokenExpired,
+} from "@/services/api/bling-token-store";
+import { refreshBlingAccessToken } from "@/services/api/bling-oauth";
 
 const DEFAULT_BASE = "https://api.bling.com.br/Api/v3";
 const REVALIDATE_SECONDS = 300;
@@ -14,7 +19,9 @@ const INITIAL_BACKOFF_MS = 800;
 
 export class BlingNotConfiguredError extends Error {
   constructor() {
-    super("Bling não configurado: defina BLING_API_ACCESS_TOKEN.");
+    super(
+      "Bling não configurado: defina BLING_API_ACCESS_TOKEN ou conecte via OAuth.",
+    );
     this.name = "BlingNotConfiguredError";
   }
 }
@@ -33,14 +40,25 @@ function getBaseUrl(): string {
   return raw.endsWith("/") ? raw.slice(0, -1) : raw;
 }
 
-function getToken(): string {
-  const token = process.env.BLING_API_ACCESS_TOKEN?.trim();
-  if (!token) throw new BlingNotConfiguredError();
-  return token;
+async function resolveAccessToken(): Promise<string> {
+  const envToken = process.env.BLING_API_ACCESS_TOKEN?.trim();
+  if (envToken) return envToken;
+
+  let stored = await getBlingStoredTokens();
+  if (!stored?.access_token) throw new BlingNotConfiguredError();
+
+  if (isBlingTokenExpired(stored)) {
+    if (!stored.refresh_token) throw new BlingNotConfiguredError();
+    stored = await refreshBlingAccessToken(stored.refresh_token);
+  }
+
+  return stored.access_token;
 }
 
-export function isBlingConfigured(): boolean {
-  return Boolean(process.env.BLING_API_ACCESS_TOKEN?.trim());
+export async function isBlingConfigured(): Promise<boolean> {
+  if (process.env.BLING_API_ACCESS_TOKEN?.trim()) return true;
+  const stored = await getBlingStoredTokens();
+  return Boolean(stored?.access_token);
 }
 
 function sleep(ms: number): Promise<void> {
@@ -65,7 +83,7 @@ async function blingFetch<T>(
   searchParams?: Record<string, string>,
 ): Promise<T> {
   const base = getBaseUrl();
-  const token = getToken();
+  const token = await resolveAccessToken();
   const url = new URL(`${base}${path.startsWith("/") ? path : `/${path}`}`);
   if (searchParams) {
     for (const [k, v] of Object.entries(searchParams)) {

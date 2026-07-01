@@ -17,10 +17,10 @@ export type CatalogLoadResult =
   | { ok: false; reason: "not_configured" }
   | { ok: false; reason: "bling_error"; message: string };
 
-export function getCatalogConfigurationStatus():
-  | "configured"
-  | "not_configured" {
-  return isBlingConfigured() ? "configured" : "not_configured";
+export async function getCatalogConfigurationStatus(): Promise<
+  "configured" | "not_configured"
+> {
+  return (await isBlingConfigured()) ? "configured" : "not_configured";
 }
 
 async function loadCatalogProducts(): Promise<CatalogProduct[]> {
@@ -61,7 +61,7 @@ async function loadCatalogProducts(): Promise<CatalogProduct[]> {
 }
 
 export async function getProducts(): Promise<CatalogLoadResult> {
-  if (!isBlingConfigured()) {
+  if (!(await isBlingConfigured())) {
     return { ok: false, reason: "not_configured" };
   }
   try {
@@ -77,7 +77,7 @@ export async function getProducts(): Promise<CatalogLoadResult> {
 export async function getProductBySlug(
   slug: string,
 ): Promise<CatalogProduct | null> {
-  if (!isBlingConfigured()) return null;
+  if (!(await isBlingConfigured())) return null;
 
   const detail = await getProductById(slug);
   if (!detail) return null;

@@ -13,7 +13,7 @@ type PageProps = {
 };
 
 export async function generateStaticParams() {
-  if (getCatalogConfigurationStatus() !== "configured") return [];
+  if ((await getCatalogConfigurationStatus()) !== "configured") return [];
   const result = await getProducts();
   if (!result.ok) return [];
   return result.products.map((p) => ({ slug: p.slug }));
@@ -34,7 +34,7 @@ export async function generateMetadata({
 }
 
 export default async function ProductPage({ params }: PageProps) {
-  if (getCatalogConfigurationStatus() !== "configured") {
+  if ((await getCatalogConfigurationStatus()) !== "configured") {
     return <CatalogNotConfigured />;
   }
 
