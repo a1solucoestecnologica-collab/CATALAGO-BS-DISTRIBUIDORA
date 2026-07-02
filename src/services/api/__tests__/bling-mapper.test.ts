@@ -54,7 +54,7 @@ describe("bling-mapper categorias", () => {
     });
   });
 
-  it("usa Sem categoria apenas quando não há categoria no Bling", () => {
+  it("usa Sem categoria quando não há categoria no Bling", () => {
     const row = {
       id: 4,
       nome: "Produto",
@@ -65,5 +65,29 @@ describe("bling-mapper categorias", () => {
       bling_category_id: "sem-categoria",
       name: "Sem categoria",
     });
+  });
+
+  it("mapeia variações embutidas no detalhe", () => {
+    const row = {
+      id: 100,
+      nome: "Pai",
+      situacao: "A",
+      preco: "10",
+      variacoes: [
+        {
+          id: 201,
+          nome: "Pai Cor:Azul",
+          codigo: "V1",
+          preco: "12",
+          variacao: { nome: "Cor:Azul" },
+          estoque: { saldoVirtualTotal: 4 },
+        },
+      ],
+    } as BlingProductSummary;
+
+    const mapped = mapBlingProductToCatalog(row, row.variacoes ?? []);
+    expect(mapped?.variants).toHaveLength(1);
+    expect(mapped?.variants?.[0]?.visual.color).toBe("Azul");
+    expect(mapped?.variants?.[0]?.technical.bling_variant_id).toBe("201");
   });
 });

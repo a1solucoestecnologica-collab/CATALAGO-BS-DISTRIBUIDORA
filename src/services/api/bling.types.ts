@@ -44,8 +44,12 @@ export type BlingProductVariation = {
   nome?: string;
   codigo?: string;
   preco?: BlingMoneyString;
+  precoCusto?: BlingMoneyString;
+  precoPromocional?: BlingMoneyString;
   situacao?: string;
+  formato?: string;
   gtin?: string;
+  imagemURL?: string;
   estoque?: BlingProductStock;
   midia?: BlingProductMedia;
   variacao?: {
@@ -53,7 +57,6 @@ export type BlingProductVariation = {
     ordem?: number;
     produtoPai?: BlingRef;
   };
-  /** Atributos estruturados quando retornados pela API. */
   atributos?: BlingVariationAttribute[];
 };
 
@@ -93,6 +96,8 @@ export type BlingProductSummary = {
     produtoPai?: BlingRef;
   };
   fornecedor?: BlingRef;
+  /** Variações embutidas no detalhe GET /produtos/{id}. */
+  variacoes?: BlingProductVariation[];
 };
 
 export type BlingListResponse<T> = {

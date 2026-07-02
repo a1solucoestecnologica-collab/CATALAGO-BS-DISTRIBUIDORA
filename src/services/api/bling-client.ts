@@ -182,6 +182,21 @@ export async function listAllProductCategories(): Promise<
   return all;
 }
 
+/** Detalhe de uma categoria de produto. */
+export async function getProductCategoryById(
+  categoryId: string,
+): Promise<BlingProductCategoryRow | null> {
+  try {
+    const json = await blingFetch<BlingSingleResponse<BlingProductCategoryRow>>(
+      `/categorias/produtos/${categoryId}`,
+    );
+    return json.data ?? null;
+  } catch (e) {
+    if (e instanceof BlingApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
 export async function listActiveProductsPage(
   page: number,
   limit = 100,
@@ -243,7 +258,26 @@ export async function getProductById(
   }
 }
 
-/** Variações de um produto pai no Bling. */
+/** Variações embutidas no detalhe do produto (fonte oficial nesta conta Bling). */
+export function extractVariationsFromDetail(
+  detail: BlingProductSummary | null | undefined,
+): BlingProductVariation[] {
+  const embedded = detail?.variacoes;
+  if (!Array.isArray(embedded) || embedded.length === 0) return [];
+  return embedded;
+}
+
+/** Variações do produto: detalhe.variacoes[] primeiro, endpoint /variacoes como fallback. */
+export async function resolveProductVariations(
+  productId: string,
+  detail?: BlingProductSummary | null,
+): Promise<BlingProductVariation[]> {
+  const embedded = extractVariationsFromDetail(detail);
+  if (embedded.length > 0) return embedded;
+  return getProductVariations(productId);
+}
+
+/** Variações de um produto pai no Bling (fallback — pode retornar 404). */
 export async function getProductVariations(
   productId: string,
 ): Promise<BlingProductVariation[]> {

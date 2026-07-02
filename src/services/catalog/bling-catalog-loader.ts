@@ -31,10 +31,15 @@ export async function listParentIdsPage(
 export async function enrichParentBatchFromBling(
   parentIds: string[],
   categoryMap: BlingCategoryMap,
+  orphanCategoryCache: BlingCategoryMap = new Map(),
 ): Promise<CatalogProduct[]> {
   const products: CatalogProduct[] = [];
   for (const id of parentIds) {
-    const mapped = await enrichParentProductFromBling(id, categoryMap);
+    const mapped = await enrichParentProductFromBling(
+      id,
+      categoryMap,
+      orphanCategoryCache,
+    );
     if (mapped) products.push(mapped);
   }
   return products;

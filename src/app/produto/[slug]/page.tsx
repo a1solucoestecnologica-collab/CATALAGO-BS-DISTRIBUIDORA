@@ -28,8 +28,11 @@ export async function generateMetadata({
     return { title: "Produto" };
   }
   return {
-    title: `${product.name} | Catálogo`,
-    description: product.description.slice(0, 155) || product.name,
+    title: product.display?.seoTitle?.trim() || `${product.name} | Catálogo`,
+    description:
+      product.display?.seoDescription?.trim() ||
+      product.description.slice(0, 155) ||
+      product.name,
   };
 }
 
@@ -41,5 +44,10 @@ export default async function ProductPage({ params }: PageProps) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) notFound();
-  return <ProductDetailClient product={product} />;
+  return (
+    <ProductDetailClient
+      key={product.technical.bling_product_id}
+      product={product}
+    />
+  );
 }

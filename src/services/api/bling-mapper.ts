@@ -74,16 +74,29 @@ export function resolveCategory(
   categoryMap?: Map<string, string>,
 ): CatalogCategory {
   const cat = row.categoria;
-  if (cat?.id == null) {
+  const rawId = cat?.id;
+  if (rawId == null || String(rawId) === "0") {
     return { bling_category_id: "sem-categoria", name: "Sem categoria" };
   }
-  const id = String(cat.id);
+  const id = String(rawId);
   const name =
-    cat.descricao?.trim() ||
-    cat.nome?.trim() ||
-    categoryMap?.get(id) ||
-    `Categoria ${id}`;
+    cat?.descricao?.trim() ||
+    cat?.nome?.trim() ||
+    categoryMap?.get(id);
+  if (!name) {
+    return { bling_category_id: "sem-categoria", name: "Sem categoria" };
+  }
   return { bling_category_id: id, name };
+}
+
+function normalizeVisualKey(key: string): string {
+  const k = key.trim().toLowerCase();
+  if (k.includes("cor")) return "color";
+  if (k.includes("tamanho") || k === "tam") return "size";
+  if (k.includes("sabor")) return "sabor";
+  if (k.includes("voltagem")) return "voltagem";
+  if (k.includes("modelo")) return "model";
+  return k;
 }
 
 function parseVariationName(nome?: string): VariantVisual {
@@ -96,12 +109,9 @@ function parseVariationName(nome?: string): VariantVisual {
   for (const part of parts) {
     const [key, ...rest] = part.split(":");
     if (!key || rest.length === 0) continue;
-    const k = key.trim().toLowerCase();
+    const nk = normalizeVisualKey(key);
     const v = rest.join(":").trim();
-    if (k.includes("cor")) visual.color = v;
-    else if (k.includes("tamanho") || k === "tam") visual.size = v;
-    else if (k.includes("modelo")) visual.model = v;
-    else visual[k] = v;
+    visual[nk] = v;
   }
   return visual;
 }
@@ -223,10 +233,8 @@ export function buildVariantOptions(
       for (const a of v.atributos) {
         if (a.valor) {
           const n = (a.nome ?? "").toLowerCase();
-          if (n.includes("cor")) visual.color = a.valor;
-          else if (n.includes("tamanho") || n === "tam") visual.size = a.valor;
-          else if (n.includes("modelo")) visual.model = a.valor;
-          else if (a.nome) visual[a.nome] = a.valor;
+          const nk = normalizeVisualKey(n || a.nome || "");
+          visual[nk] = a.valor;
         }
       }
     }
@@ -259,6 +267,7 @@ export function mapBlingProductToCatalog(
   stockOverride?: number,
   variationStockMap?: Map<string, number>,
   categoryMap?: Map<string, string>,
+  categoryOverride?: CatalogCategory,
 ): CatalogProduct | null {
   const name = row.nome?.trim();
   if (!name) return null;
@@ -281,6 +290,11 @@ export function mapBlingProductToCatalog(
   const desc =
     row.descricaoCurta?.trim() || row.descricao?.trim() || "";
 
+  const parentStock =
+    variants.length > 0
+      ? variants.reduce((sum, v) => sum + v.stock, 0)
+      : resolveStock(row, stockOverride);
+
   return {
     technical: buildTechnicalForParent(row),
     name,
@@ -288,7 +302,7 @@ export function mapBlingProductToCatalog(
     price,
     compareAtPrice:
       compareAt && compareAt > price ? compareAt : undefined,
-    category: resolveCategory(row, categoryMap),
+    category: categoryOverride ?? resolveCategory(row, categoryMap),
     brand: brand.name,
     brandId: brand.id,
     imageUrl: imgs[0] ?? PLACEHOLDER_IMAGE,
@@ -302,7 +316,7 @@ export function mapBlingProductToCatalog(
           ? Number(row.pesoBruto)
           : undefined,
     situation: row.situacao,
-    stock: resolveStock(row, stockOverride),
+    stock: parentStock,
     formato: row.formato,
     variants: variants.length ? variants : undefined,
   };

@@ -9,8 +9,8 @@ function isImportCompletedPayload(payload: Record<string, unknown>): boolean {
 
 describe("finalização da importação inicial", () => {
   it("considera concluída quando importVersion >= CURRENT_IMPORT_VERSION", () => {
-    expect(isImportCompletedPayload({ importVersion: 2 })).toBe(true);
-    expect(isImportCompletedPayload({ importVersion: 1 })).toBe(false);
+    expect(isImportCompletedPayload({ importVersion: 3 })).toBe(true);
+    expect(isImportCompletedPayload({ importVersion: 2 })).toBe(false);
     expect(isImportCompletedPayload({})).toBe(false);
   });
 });

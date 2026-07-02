@@ -3,7 +3,7 @@ export type WebhookLogStatus = "success" | "error" | "ignored";
 export const INITIAL_IMPORT_EVENT = "initial_import";
 
 /** Versão da importação inicial — incrementar ao mudar o formato dos dados. */
-export const CURRENT_IMPORT_VERSION = 2;
+export const CURRENT_IMPORT_VERSION = 3;
 
 /** Progresso incremental da importação inicial (lotes por invocação). */
 export const INITIAL_IMPORT_PROGRESS_EVENT = "initial_import_progress";

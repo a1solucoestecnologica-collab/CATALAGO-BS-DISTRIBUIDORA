@@ -2,11 +2,14 @@ import type { CartLineStored, CartLineSubmit } from "@/types/catalog";
 import type { SolicitacaoItem } from "@/types/solicitacao";
 import {
   getProductById,
-  getProductVariations,
   getStockBalances,
+  resolveProductVariations,
 } from "@/services/api/bling-client";
 import { mapBlingProductToCatalog } from "@/services/api/bling-mapper";
-import { fetchAllBlingCategoryMap } from "@/services/catalog/bling-category-map";
+import {
+  fetchAllBlingCategoryMap,
+  resolveBlingCategory,
+} from "@/services/catalog/bling-category-map";
 
 export type LineResolveResult =
   | { ok: true; item: SolicitacaoItem }
@@ -17,19 +20,21 @@ async function loadProductContext(blingProductId: string) {
   if (!row) return null;
   if (row.situacao && row.situacao !== "A") return null;
 
-  const variations = await getProductVariations(blingProductId);
+  const variations = await resolveProductVariations(blingProductId, row);
   const stockIds = [
     blingProductId,
     ...variations.map((v) => String(v.id ?? "")).filter(Boolean),
   ];
   const stockMap = await getStockBalances(stockIds);
   const categoryMap = await fetchAllBlingCategoryMap();
+  const category = await resolveBlingCategory(row, categoryMap);
   const product = mapBlingProductToCatalog(
     row,
     variations,
     stockMap.get(blingProductId),
     stockMap,
     categoryMap,
+    category,
   );
   return product;
 }

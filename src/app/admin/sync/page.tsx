@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BlingWebhookPanel } from "@/components/admin/BlingWebhookPanel";
+import { CatalogAdminPanel } from "@/components/admin/CatalogAdminPanel";
 
 export default function AdminSyncPage() {
   return (
@@ -14,6 +15,9 @@ export default function AdminSyncPage() {
         Integração com o Bling via webhooks — produtos atualizados em tempo
         real.
       </p>
+      <div className="mb-8">
+        <CatalogAdminPanel />
+      </div>
       <BlingWebhookPanel />
     </div>
   );

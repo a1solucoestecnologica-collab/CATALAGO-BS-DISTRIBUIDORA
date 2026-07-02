@@ -64,7 +64,7 @@ function normalizeImportProgress(
 
 /**
  * Processa um lote de produtos pai por invocação (adequado para serverless).
- * A importação completa ocorre em múltiplas chamadas até registrar initial_import v2.
+ * A importação completa ocorre em múltiplas chamadas até registrar initial_import v3.
  */
 export async function runInitialImportStep(): Promise<InitialImportStepResult> {
   if (await hasInitialImportCompleted()) {
